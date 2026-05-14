@@ -1,0 +1,200 @@
+{
+  "Overall": {
+    "MethodA_Flagged": {
+      "TP": 16127,
+      "FP": 350373,
+      "FN": 40619,
+      "TN": 109209,
+      "Precision": 0.044,
+      "Recall": 0.2842,
+      "F1": 0.0762,
+      "FPR": 0.7624,
+      "FNR": 0.7158
+    }
+  },
+  "PerTool": {
+    "T1_Timestomp": {
+      "MethodA_Flagged": {
+        "TP": 60,
+        "FP": 0,
+        "FN": 0,
+        "TN": 0,
+        "Precision": 1.0,
+        "Recall": 1.0,
+        "F1": 1.0,
+        "FPR": 0,
+        "FNR": 0.0
+      }
+    },
+    "T2_BulkFileChanger": {
+      "MethodA_Flagged": {
+        "TP": 60,
+        "FP": 0,
+        "FN": 0,
+        "TN": 0,
+        "Precision": 1.0,
+        "Recall": 1.0,
+        "F1": 1.0,
+        "FPR": 0,
+        "FNR": 0.0
+      }
+    },
+    "T3_SetMace": {
+      "MethodA_Flagged": {
+        "TP": 51,
+        "FP": 0,
+        "FN": 9,
+        "TN": 0,
+        "Precision": 1.0,
+        "Recall": 0.85,
+        "F1": 0.9189,
+        "FPR": 0,
+        "FNR": 0.15
+      }
+    },
+    "T4_PowerShell": {
+      "MethodA_Flagged": {
+        "TP": 43,
+        "FP": 0,
+        "FN": 17,
+        "TN": 0,
+        "Precision": 1.0,
+        "Recall": 0.7167,
+        "F1": 0.835,
+        "FPR": 0,
+        "FNR": 0.2833
+      }
+    },
+    "T5_nTimestomp": {
+      "MethodA_Flagged": {
+        "TP": 39,
+        "FP": 0,
+        "FN": 21,
+        "TN": 0,
+        "Precision": 1.0,
+        "Recall": 0.65,
+        "F1": 0.7879,
+        "FPR": 0,
+        "FNR": 0.35
+      }
+    }
+  },
+  "PerScenario": {
+    "S1_PlausiblePast": {
+      "MethodA_Flagged": {
+        "TP": 47,
+        "FP": 0,
+        "FN": 3,
+        "TN": 0,
+        "Precision": 1.0,
+        "Recall": 0.94,
+        "F1": 0.9691,
+        "FPR": 0,
+        "FNR": 0.06
+      }
+    },
+    "S2_ImplausiblePast": {
+      "MethodA_Flagged": {
+        "TP": 44,
+        "FP": 0,
+        "FN": 6,
+        "TN": 0,
+        "Precision": 1.0,
+        "Recall": 0.88,
+        "F1": 0.9362,
+        "FPR": 0,
+        "FNR": 0.12
+      }
+    },
+    "S3_CloneFromLegit": {
+      "MethodA_Flagged": {
+        "TP": 44,
+        "FP": 0,
+        "FN": 6,
+        "TN": 0,
+        "Precision": 1.0,
+        "Recall": 0.88,
+        "F1": 0.9362,
+        "FPR": 0,
+        "FNR": 0.12
+      }
+    },
+    "S4_FutureDate": {
+      "MethodA_Flagged": {
+        "TP": 38,
+        "FP": 0,
+        "FN": 12,
+        "TN": 0,
+        "Precision": 1.0,
+        "Recall": 0.76,
+        "F1": 0.8636,
+        "FPR": 0,
+        "FNR": 0.24
+      }
+    },
+    "S5_PartialMod": {
+      "MethodA_Flagged": {
+        "TP": 40,
+        "FP": 0,
+        "FN": 10,
+        "TN": 0,
+        "Precision": 1.0,
+        "Recall": 0.8,
+        "F1": 0.8889,
+        "FPR": 0,
+        "FNR": 0.2
+      }
+    },
+    "S6_MillisecondPrecision": {
+      "MethodA_Flagged": {
+        "TP": 40,
+        "FP": 0,
+        "FN": 10,
+        "TN": 0,
+        "Precision": 1.0,
+        "Recall": 0.8,
+        "F1": 0.8889,
+        "FPR": 0,
+        "FNR": 0.2
+      }
+    }
+  },
+  "PerRule": {
+    "A1_SI_Created_LT_FN": {
+      "TruePositiveRate": 0.1786,
+      "FalsePositiveRate": 0.2476,
+      "StompedTriggered": 10134,
+      "BaselineTriggered": 113793
+    },
+    "A2_SI_Mod_LT_SI_Created": {
+      "TruePositiveRate": 0.0015,
+      "FalsePositiveRate": 0.5329,
+      "StompedTriggered": 83,
+      "BaselineTriggered": 244906
+    },
+    "A3_SI_Entry_LT_SI_Created": {
+      "TruePositiveRate": 0.0004,
+      "FalsePositiveRate": 0.0131,
+      "StompedTriggered": 20,
+      "BaselineTriggered": 6002
+    },
+    "A4_ZeroSubSec_si_created": {
+      "TruePositiveRate": 0.0004,
+      "FalsePositiveRate": 0.0248,
+      "StompedTriggered": 24,
+      "BaselineTriggered": 11411
+    },
+    "A4_ZeroSubSec_si_modified": {
+      "TruePositiveRate": 0.0019,
+      "FalsePositiveRate": 0.478,
+      "StompedTriggered": 106,
+      "BaselineTriggered": 219679
+    },
+    "A5_All_SI_Identical": {
+      "TruePositiveRate": 0.1038,
+      "FalsePositiveRate": 0.0347,
+      "StompedTriggered": 5890,
+      "BaselineTriggered": 15967
+    }
+  }
+}

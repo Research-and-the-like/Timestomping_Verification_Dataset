@@ -1,0 +1,22 @@
+# Large forensic artefacts
+*.bin
+*.E01
+*.dd
+*.raw
+Artifacts/
+*.evtx
+*.pf
+
+# VM stuff
+*.vdi
+*.vmdk
+*.vbox*
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# OS junk
+.DS_Store
+Thumbs.db
