@@ -1,8 +1,10 @@
 # ============================================================
-# SCRIPT: 03_Create_Timestomp_Targets.ps1
-# PURPOSE: Create 30 target files (5 tools × 6 scenarios)
-#          Each file gets a unique name encoding its treatment
+# 03_Create_Timestomp_Targets.ps1
+# Create 30 target files (5 tools × 6 scenarios)
+# Each file gets a unique name encoding its treatment
 # ============================================================
+
+Write-Host "============== 03_Create_Timestomp_Targets.ps1 ==============" -ForegroundColor Black -BackgroundColor Yellow
 
 $TSDir = "C:\Research\Data\Timestomped"
 $TargetDir = "$TSDir\Targets"

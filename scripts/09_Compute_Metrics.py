@@ -1,13 +1,14 @@
 # ============================================================
-# SCRIPT: 09_Compute_Metrics.py
-# PURPOSE: Compute full precision/recall/F1 breakdown
+# 09_Compute_Metrics.py
+# Compute full precision/recall/F1 breakdown
 #          Per-tool, per-scenario, per-OS, per-category
-# USAGE:  python 09_Compute_Metrics.py
 # ============================================================
 
 import pandas as pd
 import json
 from pathlib import Path
+
+print("============== 07_MethodC_MultiArtifact.py ==============\n")
 
 DATA_ROOT = Path(r"C:\Research\Data")
 

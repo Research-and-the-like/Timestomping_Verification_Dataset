@@ -1,13 +1,15 @@
 # ============================================================
-# SCRIPT: 07_MethodC_MultiArtifact.py
-# PURPOSE: Add Prefetch and Event Log cross-referencing
-#          Implements detection rules C1 (Prefetch) and C2 (Event Log)
+# 07_MethodC_MultiArtifact.py
+# Add Prefetch and Event Log cross-referencing
+#     Implements detection rules C1 (Prefetch) and C2 (Event Log)
 # ============================================================
 
 import pandas as pd
 from pathlib import Path
 from datetime import datetime, timedelta
 import csv
+
+print("============== 07_MethodC_MultiArtifact.py ==============\n")
 
 DATA_ROOT = Path(r"C:\Research\Data")
 

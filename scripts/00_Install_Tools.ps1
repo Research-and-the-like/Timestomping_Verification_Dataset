@@ -1,14 +1,16 @@
 # ============================================================
-# SCRIPT: 00_Install_Tools.ps1
-# PURPOSE: Download and install all forensic and timestomping tools
-# RUN AS: Administrator
+# 00_Install_Tools.ps1
+# Download and install all forensic and timestomping tools
+# Run as Administrator
 # ============================================================
+
+Write-Host "============== 00_Install_Tools.ps1 ==============" -ForegroundColor Black -BackgroundColor Yellow
 
 $ToolsRoot = "C:\Research\Tools"
 $DataRoot  = "C:\Research\Data"
 $ScriptsRoot = "C:\Research\Scripts"
 
-# Create directory structure
+# Creates directory structure
 @($ToolsRoot, $DataRoot, $ScriptsRoot,
   "$DataRoot\Baseline", "$DataRoot\Timestomped",
   "$DataRoot\Artifacts", "$DataRoot\Parsed",

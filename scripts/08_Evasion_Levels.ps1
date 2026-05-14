@@ -1,8 +1,8 @@
 # ============================================================
-# SCRIPT: 08_Evasion_Levels.ps1
-# PURPOSE: Implement evasion Levels 1-5 with escalating sophistication
-# RUN AS: Administrator
-# IMPORTANT: Restore to POST-TIMESTOMPING snapshot before each level
+# 08_Evasion_Levels.ps1
+# Implement evasion Levels 1-5 with escalating sophistication
+# RUN AS Administrator
+# REMINDER: Restore to POST-TIMESTOMPING snapshot before each level
 # ============================================================
 
 param(
@@ -10,6 +10,8 @@ param(
     [ValidateRange(1,5)]
     [int]$Level
 )
+
+Write-Host "============== 08_Evasion_Levels.ps1 ==============" -ForegroundColor Black -BackgroundColor Yellow
 
 $EvasionDir = "C:\Research\Data\Evasion\Level$Level"
 $ToolsRoot = "C:\Research\Tools"

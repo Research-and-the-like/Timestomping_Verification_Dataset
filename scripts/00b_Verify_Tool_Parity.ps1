@@ -1,24 +1,19 @@
 # ============================================================
-# SCRIPT: 00b_Verify_Tool_Parity.ps1
-# PURPOSE: Pre-flight tool existence + execution verification
+# 00b_Verify_Tool_Parity.ps1
+# Pre-flight tool existence + execution verification
 #          Confirms all required tools are present AND functional
 #          before any experiment phase begins.
-# USAGE:   .\00b_Verify_Tool_Parity.ps1 [-Strict]
-# OPTIONS: -Strict  Exit with code 1 if any CRITICAL tool fails
-#                   (use this in automated pipelines)
-# RUN AS:  Administrator
-# OUTPUT:  Console report + C:\Research\Data\tool_parity_report.json
-# VERSION: 1.1 (27 April 2026)
-#   FIXES: - Null-coalescing rewritten (removed broken -replace $null pattern)
-#          - Inline `if` removed from -f format strings (pre-computed variables)
-#          - Counter logic fixed (early return now increments critFail/optFail)
-#          - nTimestomp and RawCopy paths resolved via recursive search
-#          - SetMace execution test relaxed (no-arg probe, catches non-zero exit)
+# Usage: .\00b_Verify_Tool_Parity.ps1 [-Strict]
+#        -Strict  Exit with code 1 if any CRITICAL tool fails
+#
+# RUN AS Administrator
 # ============================================================
 
 param(
     [switch]$Strict
 )
+
+Write-Host "============== 00b_Verify_Tool_Parity.ps1 ==============" -ForegroundColor Black -BackgroundColor Yellow
 
 # ---------------------------------------------------------------------------
 # SETUP

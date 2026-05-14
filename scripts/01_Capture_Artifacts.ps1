@@ -1,15 +1,18 @@
 # ============================================================
-# SCRIPT: 01_Capture_Artifacts.ps1
-# PURPOSE: Extract MFT, $UsnJrnl, Prefetch, Event Logs
-# USAGE: .\01_Capture_Artifacts.ps1 -Tag "pre-baseline"
-# RUN AS: Administrator
+# 01_Capture_Artifacts.ps1
+# Extract MFT, $UsnJrnl, Prefetch, Event Logs
+# Usage: .\01_Capture_Artifacts.ps1 -Tag "pre-baseline"
+# RUN AS Administrator
 # ============================================================
+
 param(
     [Parameter(Mandatory=$true)]
     [string]$Tag,
     [string]$Drive = "C:",
     [string]$OutDir = "C:\Research\Data\Artifacts"
 )
+
+Write-Host "============== 01_Capture_Artifacts.ps1 ==============" -ForegroundColor Black -BackgroundColor Yellow
 
 $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
 $captureDir = "$OutDir\${Tag}_${timestamp}"

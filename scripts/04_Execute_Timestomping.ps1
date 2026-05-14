@@ -1,9 +1,11 @@
 # ============================================================
-# SCRIPT: 04_Execute_Timestomping.ps1
-# PURPOSE: Apply timestomping tool/scenario combinations
-#          Updates the manifest CSV with post-stomp timestamps
-# RUN AS: Administrator (required for SetMace)
+# 04_Execute_Timestomping.ps1
+# Apply timestomping tool/scenario combinations
+#      Updates the manifest CSV with post-stomp timestamps
+# RUN AS Administrator
 # ============================================================
+
+Write-Host "============== 04_Execute_Timestomping.ps1 ==============" -ForegroundColor Black -BackgroundColor Yellow
 
 $TSDir = "C:\Research\Data\Timestomped"
 $ToolsRoot = "C:\Research\Tools"
