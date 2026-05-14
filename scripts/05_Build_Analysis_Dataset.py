@@ -1,14 +1,15 @@
 # ============================================================
-# SCRIPT: 05_Build_Analysis_Dataset.py
-# PURPOSE: Merge MFT parsed data with ground-truth manifest
-#          to create the labelled detection dataset
-# USAGE:  python 05_Build_Analysis_Dataset.py
+# 05_Build_Analysis_Dataset.py
+# MFT parsed data with ground-truth manifest
+#    to create the labelled detection dataset
 # ============================================================
 
 import pandas as pd
 import os
 from pathlib import Path
 from datetime import datetime
+
+print("============== 05_Build_Analysis_Dataset.py ==============\n")
 
 DATA_ROOT = Path(r"C:\Research\Data")
 ARTIFACTS_DIR = DATA_ROOT / "Artifacts"

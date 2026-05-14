@@ -1,16 +1,15 @@
 # ============================================================
-# SCRIPT: 02_Legitimate_Operations.ps1
-# PURPOSE: Execute all 15 baseline legitimate operations (L1-L15)
-#          with automated pre/post artifact captures per operation.
-#          Operations that cannot be fully scripted will pause
-#          and prompt the user for manual execution.
-# RUN AS: Administrator
+# 02_Legitimate_Operations.ps1
+# Execute all 15 baseline legitimate operations (L1-L15)
+#      with automated pre/post artifact captures per operation.
+#      Operations that cannot be fully scripted will pause
+#      and prompt the user for manual execution.
 # USAGE:  .\02_Legitimate_Operations.ps1                  (run all)
 #         .\02_Legitimate_Operations.ps1 -Operations L4    (run one)
 #         .\02_Legitimate_Operations.ps1 -Operations L1,L2,L3 (run subset)
 #         .\02_Legitimate_Operations.ps1 -SkipCapture      (skip artifact capture, for testing)
 #         .\02_Legitimate_Operations.ps1 -OSTag "w10"      (tag artifacts with OS version)
-# VERSION: 1.0 (April 2026)
+# RUN AS Administrator
 # ============================================================
 
 param(
@@ -20,6 +19,8 @@ param(
     [string]$CaptureScript = "C:\Research\Scripts\01_Capture_Artifacts.ps1",
     [int]$IdleWaitSeconds = 300
 )
+
+Write-Host "============== 02_Legitimate_Operations.ps1 ==============" -ForegroundColor Black -BackgroundColor Yellow
 
 $ErrorActionPreference = "Continue"
 $DataRoot   = "C:\Research\Data"

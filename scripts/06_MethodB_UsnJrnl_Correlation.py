@@ -1,12 +1,14 @@
 # ============================================================
-# SCRIPT: 06_MethodB_UsnJrnl_Correlation.py
-# PURPOSE: Correlate MFT timestamps with $UsnJrnl entries
-#          Implements detection rules B1, B2, B3
+# 06_MethodB_UsnJrnl_Correlation.py
+# Correlate MFT timestamps with $UsnJrnl entries
+#      Implements detection rules B1, B2, B3
 # ============================================================
 
 import pandas as pd
 from pathlib import Path
 from datetime import timedelta
+
+print("============== 06_MethodB_UsnJrnl_Correlation.py ==============\n")
 
 DATA_ROOT = Path(r"C:\Research\Data")
 

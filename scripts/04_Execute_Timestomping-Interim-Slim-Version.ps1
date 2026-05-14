@@ -1,9 +1,11 @@
 # ============================================================
-# SCRIPT: 04_Execute_Timestomping.ps1 (INTERIM SLIM VERSION)
-# PURPOSE: Apply T1 (SetFileTime API) and T2 (BulkFileChanger equivalent)
-#          across all scenarios in the manifest
-# RUN AS: Administrator (not strictly needed for T1/T2 but harmless)
+# 04_Execute_Timestomping.ps1 (INTERIM SLIM VERSION)
+# Apply T1 (SetFileTime API) and T2 (BulkFileChanger equivalent)
+#      across all scenarios in the manifest
+# RUN AS Administrator
 # ============================================================
+
+Write-Host "============== 04_Execute_Timestomping-Interim-Slim-Version.ps1 ==============" -ForegroundColor Black -BackgroundColor White
 
 $TSDir = "C:\Research\Data\Timestomped"
 $ToolsRoot = "C:\Research\Tools"
