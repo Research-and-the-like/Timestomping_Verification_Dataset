@@ -87,9 +87,14 @@ def compute_detection_features(df):
     )
     
 
-    # Naive OR of all six rules (the strawman baseline)
-    a_cols = [c for c in df.columns if c.startswith('A') and c[1].isdigit()]
-    df['MethodA_Score'] = df[a_cols].sum(axis=1)
+    # Naive OR of all six rule-features (the strawman baseline).
+    # Explicit list rather than a startswith('A') regex, which could silently absorb any
+    # future MFT column shaped like "A<digit>...".
+    a_flag_cols = ['A1_SI_Created_LT_FN', 'A2_SI_Mod_LT_SI_Created',
+                   'A3_SI_Entry_LT_SI_Created', 'A4_ZeroSubSec_si_created',
+                   'A4_ZeroSubSec_si_modified', 'A5_All_SI_Identical']
+    a_flag_cols = [c for c in a_flag_cols if c in df.columns]
+    df['MethodA_Score'] = df[a_flag_cols].sum(axis=1)
     df['MethodA_Flagged'] = df['MethodA_Score'] > 0
 
     # Pruned ruleset: drop A2 (TPR 0.000, FPR 0.475) and A4-modified
@@ -110,6 +115,20 @@ def main():
     
     # Extract and compute features
     df = extract_timestamps(mft_post)
+
+    # Restrict to ACTIVE (in-use) MFT records before anything else. MFTECmd emits deleted
+    # records too; leaving them in (a) bloats the negative class and deflates FPR via an
+    # inflated TN denominator, and (b) can let a stale deleted record sharing a target's
+    # filename inflate the positive count and trip the assert below.
+    if 'InUse' in df.columns:
+        before = len(df)
+        mask = df['InUse'].astype(str).str.strip().str.lower().isin(['true', '1'])
+        df = df[mask].copy()
+        print(f"[i] InUse filter: {before:,} -> {len(df):,} active MFT records")
+    else:
+        print("[!] No 'InUse' column in MFT CSV; cannot filter deleted records. "
+              "Negative-class counts may include deleted entries.")
+
     df = compute_detection_features(df)
     
     # Load ground-truth manifest
