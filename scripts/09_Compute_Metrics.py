@@ -8,7 +8,7 @@ import pandas as pd
 import json
 from pathlib import Path
 
-print("============== 07_MethodC_MultiArtifact.py ==============\n")
+print("============== 09_Compute_Metrics.py ==============\n")
 
 DATA_ROOT = Path(r"C:\Research\Data")
 
@@ -37,7 +37,8 @@ def main():
     df = pd.read_csv(DATA_ROOT / "Parsed" / "analysis_dataset.csv", low_memory=False)
     manifest = pd.read_csv(DATA_ROOT / "Timestomped" / "timestomp_manifest.csv")
     
-    methods = ['MethodA_Flagged', 'MethodB_Flagged', 'MethodC_Flagged',
+    methods = ['MethodA_Flagged', 'MethodA_Pruned_Flagged',
+               'MethodB_Flagged', 'MethodC_Flagged',
                'MethodAB_Flagged', 'MethodABC_Flagged']
     
     results = {}

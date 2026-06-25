@@ -86,11 +86,19 @@ def compute_detection_features(df):
         (df['si_accessed'] == df['si_entry_mod'])
     )
     
-    # Composite Method A score (count of triggered rules)
+
+    # Naive OR of all six rules (the strawman baseline)
     a_cols = [c for c in df.columns if c.startswith('A') and c[1].isdigit()]
     df['MethodA_Score'] = df[a_cols].sum(axis=1)
     df['MethodA_Flagged'] = df['MethodA_Score'] > 0
-    
+
+    # Pruned ruleset: drop A2 (TPR 0.000, FPR 0.475) and A4-modified
+    # (TPR 0.067, FPR 0.426). Both generate the noise floor without detection value.
+    pruned_cols = ['A1_SI_Created_LT_FN', 'A3_SI_Entry_LT_SI_Created',
+                   'A4_ZeroSubSec_si_created', 'A5_All_SI_Identical']
+    pruned_cols = [c for c in pruned_cols if c in df.columns]
+    df['MethodA_Pruned_Flagged'] = df[pruned_cols].sum(axis=1) > 0
+
     return df
 
 def main():
@@ -108,18 +116,37 @@ def main():
     manifest_path = DATA_ROOT / "Timestomped" / "timestomp_manifest.csv"
     if manifest_path.exists():
         manifest = pd.read_csv(manifest_path)
-        # Create lookup of timestomped file paths
-        stomped_paths = set(manifest[manifest['Timestomped'] == True]['FilePath'].str.lower())
-        
-        # Label: 1 = timestomped, 0 = legitimate
-        if 'FileName' in df.columns:
-            df['GroundTruth_Timestomped'] = df['FileName'].apply(
-                lambda x: 1 if any(str(x).lower() in p for p in stomped_paths) else 0
+
+        # Ground truth = the 300 manifest targets, keyed on Label==1.
+        # NOT 'Timestomped' (that drops any row where a tool threw an exception,
+        # silently shrinking the positive class).
+        target_names = set(
+            manifest[manifest['Label'] == 1]['FileName']
+            .astype(str).str.lower().str.strip()
+        )
+
+        # Always build FullPath (Script 07/C2 expects it; old elif never ran).
+        if 'ParentPath' in df.columns and 'FileName' in df.columns:
+            df['FullPath'] = (
+                df['ParentPath'].fillna('').astype(str).str.rstrip('\\')
+                + '\\' + df['FileName'].fillna('').astype(str)
             )
-        elif 'ParentPath' in df.columns and 'FileName' in df.columns:
-            df['FullPath'] = df['ParentPath'].fillna('') + '\\' + df['FileName'].fillna('')
-            df['GroundTruth_Timestomped'] = df['FullPath'].str.lower().isin(stomped_paths).astype(int)
-    
+
+        # EXACT filename match. Filenames are globally unique, so this is
+        # equivalent to a full-path join with none of the prefix mismatch risk.
+        df['GroundTruth_Timestomped'] = (
+            df['FileName'].astype(str).str.lower().str.strip()
+            .isin(target_names).astype(int)
+        )
+
+        n_pos = int(df['GroundTruth_Timestomped'].sum())
+        n_expected = len(target_names)
+        print(f"[i] manifest targets: {n_expected} | MFT rows labelled positive: {n_pos}")
+        assert n_pos == n_expected, (
+            f"GROUND TRUTH MISMATCH: expected {n_expected}, got {n_pos}. "
+            f"Pipeline halted to prevent contaminated metrics."
+        )
+
     # Save analysis dataset
     output_path = OUTPUT_DIR / "analysis_dataset.csv"
     df.to_csv(output_path, index=False)
