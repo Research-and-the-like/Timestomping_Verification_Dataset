@@ -1,14 +1,16 @@
 # ============================================================
 # 09_Compute_Metrics.py
 # Compute full precision/recall/F1 breakdown
-#          Per-tool, per-scenario, per-OS, per-category
+#          Overall, per-tool, per-scenario, per-rule
+# (Per-OS and per-category breakdowns are NOT implemented here: there is no OS column
+#  in the dataset and no L1-L15 baseline labelling yet. Do not cite them as produced.)
 # ============================================================
 
 import pandas as pd
 import json
 from pathlib import Path
 
-print("============== 07_MethodC_MultiArtifact.py ==============\n")
+print("============== 09_Compute_Metrics.py ==============\n")
 
 DATA_ROOT = Path(r"C:\Research\Data")
 
@@ -37,7 +39,8 @@ def main():
     df = pd.read_csv(DATA_ROOT / "Parsed" / "analysis_dataset.csv", low_memory=False)
     manifest = pd.read_csv(DATA_ROOT / "Timestomped" / "timestomp_manifest.csv")
     
-    methods = ['MethodA_Flagged', 'MethodB_Flagged', 'MethodC_Flagged',
+    methods = ['MethodA_Flagged', 'MethodA_Pruned_Flagged',
+               'MethodB_Flagged', 'MethodC_Flagged',
                'MethodAB_Flagged', 'MethodABC_Flagged']
     
     results = {}
@@ -50,31 +53,43 @@ def main():
                 df['GroundTruth_Timestomped'], df[m].astype(int)
             )
     
+    # Shared negative pool for the per-group breakdowns below. Scoring a tool's/scenario's
+    # positives ONLY against themselves makes every subset all-positive, which forces
+    # FP=0, TN=0 -> Precision=1.0 and FPR=0.0 by construction (the degenerate tables in the
+    # interim). Instead, evaluate each group's positives against the common baseline
+    # negatives so Recall is group-specific and FP/TN/FPR are meaningful and comparable.
+    # NOTE: precision/FPR here are base-rate dominated by the full-MFT negative pool;
+    # Recall (and FNR) are the per-group signals to read.
+    have_keys = 'FileName' in df.columns and 'GroundTruth_Timestomped' in df.columns
+    if have_keys:
+        df = df.copy()
+        df['_fname_lc'] = df['FileName'].astype(str).str.lower()
+        baseline_neg = df[df['GroundTruth_Timestomped'] == 0]
+
+    def grouped_metrics(group_col):
+        out = {}
+        for key in manifest[group_col].unique():
+            grp_files = set(manifest[manifest[group_col] == key]['FileName'].astype(str).str.lower())
+            expected = int(((manifest[group_col] == key) & (manifest['Label'] == 1)).sum())
+            pos = df[(df['GroundTruth_Timestomped'] == 1) & (df['_fname_lc'].isin(grp_files))]
+            assert len(pos) == expected, (
+                f"{group_col}={key}: matched {len(pos)} positive MFT rows, expected {expected}. "
+                f"Metric join row-count guard tripped; halting."
+            )
+            df_grp = pd.concat([pos, baseline_neg])
+            out[key] = {}
+            for m in methods:
+                if m in df_grp.columns:
+                    out[key][m] = compute_metrics(
+                        df_grp['GroundTruth_Timestomped'], df_grp[m].astype(int)
+                    )
+        return out
+
     # --- Per-tool breakdown ---
-    results['PerTool'] = {}
-    for tool in manifest['Tool'].unique():
-        tool_files = set(manifest[manifest['Tool'] == tool]['FileName'].str.lower())
-        df_tool = df[df['FileName'].str.lower().isin(tool_files)] if 'FileName' in df.columns else pd.DataFrame()
-        if len(df_tool) > 0:
-            results['PerTool'][tool] = {}
-            for m in methods:
-                if m in df_tool.columns:
-                    results['PerTool'][tool][m] = compute_metrics(
-                        df_tool['GroundTruth_Timestomped'], df_tool[m].astype(int)
-                    )
-    
+    results['PerTool'] = grouped_metrics('Tool') if have_keys else {}
+
     # --- Per-scenario breakdown ---
-    results['PerScenario'] = {}
-    for scenario in manifest['Scenario'].unique():
-        scen_files = set(manifest[manifest['Scenario'] == scenario]['FileName'].str.lower())
-        df_scen = df[df['FileName'].str.lower().isin(scen_files)] if 'FileName' in df.columns else pd.DataFrame()
-        if len(df_scen) > 0:
-            results['PerScenario'][scenario] = {}
-            for m in methods:
-                if m in df_scen.columns:
-                    results['PerScenario'][scenario][m] = compute_metrics(
-                        df_scen['GroundTruth_Timestomped'], df_scen[m].astype(int)
-                    )
+    results['PerScenario'] = grouped_metrics('Scenario') if have_keys else {}
     
     # --- Per-rule detection rates ---
     results['PerRule'] = {}

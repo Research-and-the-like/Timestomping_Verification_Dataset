@@ -13,6 +13,15 @@ print("============== 07_MethodC_MultiArtifact.py ==============\n")
 
 DATA_ROOT = Path(r"C:\Research\Data")
 
+def _normalize_path(p):
+    """Normalize a path for cross-source comparison: lowercase, forward->back slashes,
+    strip a leading drive letter (Sysmon 'C:\\...') and MFTECmd's volume-relative '.\\'
+    prefix so both collapse to 'research\\data\\...\\file.txt'."""
+    s = str(p).strip().lower().replace('/', '\\')
+    if len(s) >= 2 and s[1] == ':':       # drop leading drive letter, e.g. "c:"
+        s = s[2:]
+    return s.lstrip('.').lstrip('\\')
+
 def load_prefetch_data(artifacts_dir, tag_pattern="post-timestomping"):
     """Load PECmd parsed Prefetch data."""
     for d in sorted(artifacts_dir.iterdir(), reverse=True):
@@ -77,7 +86,10 @@ def compute_methodC_features(analysis_df, prefetch_df, sysmon_df):
             fname = str(row.get('FileName', '')).upper()
             si_created = pd.to_datetime(row.get('si_created'), errors='coerce')
             
-            if fname.endswith('.EXE') and fname in pf_lookup and pd.notna(si_created):
+            # No hard-coded '.EXE' gate: C1 applies to any file that actually has a
+            # Prefetch entry (executables). On a .txt-only corpus nothing matches, which
+            # is an inherent property of the method, not an artificial extension filter.
+            if fname in pf_lookup and pd.notna(si_created):
                 pf_times = pf_lookup[fname]
                 # If prefetch shows execution BEFORE $SI claims file was created
                 contradiction = any(t < si_created - timedelta(hours=1) for t in pf_times)
@@ -92,15 +104,19 @@ def compute_methodC_features(analysis_df, prefetch_df, sysmon_df):
     # --- C2: Sysmon Event 2 ---
     c2_results = []
     if sysmon_df is not None:
-        # Build set of filenames with SetCreationTime events
-        sysmon_files = set()
+        # Build a set of NORMALIZED target paths from Sysmon Event 2. Previously this used
+        # a substring test (`fpath in sf`) which both risked false positives and, because
+        # MFT paths are '.\...'-prefixed while Sysmon paths are absolute 'C:\...', never
+        # actually matched. Normalize both sides and compare for exact equality.
+        sysmon_paths = set()
         for col in ['TargetFilename', 'PayloadData1', 'MapDescription']:
             if col in sysmon_df.columns:
-                sysmon_files.update(sysmon_df[col].dropna().str.lower().tolist())
-        
+                for val in sysmon_df[col].dropna():
+                    sysmon_paths.add(_normalize_path(val))
+
         for _, row in analysis_df.iterrows():
-            fpath = str(row.get('FullPath', row.get('FileName', ''))).lower()
-            c2_results.append(any(fpath in sf for sf in sysmon_files))
+            fpath = _normalize_path(row.get('FullPath', row.get('FileName', '')))
+            c2_results.append(bool(fpath) and fpath in sysmon_paths)
     else:
         c2_results = [False] * len(analysis_df)
     
@@ -110,9 +126,16 @@ def compute_methodC_features(analysis_df, prefetch_df, sysmon_df):
     c_cols = ['C1_Prefetch_Contradiction', 'C2_Sysmon_SetCreationTime']
     analysis_df['MethodC_Score'] = analysis_df[c_cols].sum(axis=1)
     analysis_df['MethodC_Flagged'] = analysis_df['MethodC_Score'] > 0
+    # Guard against Method B having been skipped (no UsnJrnl); treat a missing column as
+    # all-False rather than raising KeyError.
+    if 'MethodB_Flagged' in analysis_df.columns:
+        method_b = analysis_df['MethodB_Flagged']
+    else:
+        print("[!] MethodB_Flagged absent; treating Method B as all-False for A|B|C.")
+        method_b = pd.Series(False, index=analysis_df.index)
     analysis_df['MethodABC_Flagged'] = (
         analysis_df['MethodA_Flagged'] |
-        analysis_df['MethodB_Flagged'] |
+        method_b |
         analysis_df['MethodC_Flagged']
     )
     
