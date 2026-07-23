@@ -15,14 +15,31 @@ DATA_ROOT = Path(r"C:\Research\Data")
 ARTIFACTS_DIR = DATA_ROOT / "Artifacts"
 OUTPUT_DIR = DATA_ROOT / "Parsed"
 
-def load_mft_csv(tag_pattern):
-    """Find and load MFT_parsed.csv from an artifact capture."""
+
+def load_mft_csvs(tag_pattern):
+    """Find the newest capture matching tag_pattern and load ALL per-volume MFT CSVs
+    (MFT_C_parsed.csv, MFT_E_parsed.csv, ...), concatenating them with a SourceVolume tag.
+    Falls back to a legacy single MFT_parsed.csv if no per-volume files are present."""
     for d in sorted(ARTIFACTS_DIR.iterdir(), reverse=True):
         if tag_pattern in d.name:
-            mft_csv = d / "MFT_parsed.csv"
-            if mft_csv.exists():
-                print(f"[+] Loading MFT from {mft_csv}")
-                return pd.read_csv(mft_csv, low_memory=False)
+            per_vol = sorted(d.glob("MFT_?_parsed.csv"))   # MFT_C_parsed.csv, MFT_E_parsed.csv
+            if per_vol:
+                frames = []
+                for f in per_vol:
+                    vol = f.stem.split('_')[1]             # "MFT_C_parsed" -> "C"
+                    print(f"[+] Loading MFT from {f} (volume {vol}:)")
+                    sub = pd.read_csv(f, low_memory=False)
+                    sub['SourceVolume'] = vol
+                    frames.append(sub)
+                combined = pd.concat(frames, ignore_index=True)
+                print(f"[i] Combined {len(per_vol)} volume MFTs -> {len(combined):,} rows")
+                return combined
+            legacy = d / "MFT_parsed.csv"                 # backward compatibility
+            if legacy.exists():
+                print(f"[+] Loading legacy single MFT from {legacy}")
+                df = pd.read_csv(legacy, low_memory=False)
+                df['SourceVolume'] = 'C'
+                return df
     print(f"[!] No MFT CSV found matching '{tag_pattern}'")
     return None
 
@@ -55,7 +72,15 @@ def extract_timestamps(mft_df):
     for col in ts_cols:
         if col in df.columns:
             df[col] = pd.to_datetime(df[col], errors='coerce')
-    
+            
+    # MFTECmd leaves $FN (0x30) columns blank when they equal the $SI (0x10) value.
+    # Forensically a blank $FN means "$FN == $SI", not "unknown", so backfill from $SI.
+    # Without this, any rule comparing $FN across files misreads blanks as NaT.
+    for si, fn in [('si_created', 'fn_created'), ('si_modified', 'fn_modified'),
+                   ('si_accessed', 'fn_accessed'), ('si_entry_mod', 'fn_entry_mod')]:
+        if si in df.columns and fn in df.columns:
+            df[fn] = df[fn].fillna(df[si])
+
     return df
 
 def compute_detection_features(df):
@@ -108,7 +133,7 @@ def compute_detection_features(df):
 
 def main():
     # Load post-timestomping MFT
-    mft_post = load_mft_csv("post-timestomping")
+    mft_post = load_mft_csvs("post-timestomping")
     if mft_post is None:
         print("[!] Run artifact capture first: .\\01_Capture_Artifacts.ps1 -Tag 'post-timestomping'")
         return

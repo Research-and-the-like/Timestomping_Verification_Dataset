@@ -410,21 +410,21 @@ $AllOperations["L6"] = @{
         # Same-volume move = MFT rename, preserves both $SI and $FN
 
         # Method 2: Cross-volume move (if second disk exists and is writable)
-        $secondDisk = "D:\"
+        $secondDisk = "E:\"
         $crossVolumeDone = $false
         if (Test-Path $secondDisk) {
             try {
                 $m2 = "${secondDisk}Research\L6_CrossVolume"
                 New-Item -ItemType Directory -Path $m2 -Force -ErrorAction Stop | Out-Null
-                Write-Host "  [L6] Method 2: Cross-volume move (to D:)..." -ForegroundColor Gray
+                Write-Host "  [L6] Method 2: Cross-volume move (to E:)..." -ForegroundColor Gray
                 6..10 | ForEach-Object {
                     Move-Item "$srcDir\movefile_$_.txt" -Destination "$m2\movefile_$_.txt"
                 }
                 $crossVolumeDone = $true
                 # Cross-volume = copy + delete. New MFT entry on target, $FN Created = NOW
             } catch {
-                Write-Host "  [L6] D: exists but is not writable (PermissionDenied). Skipping cross-volume." -ForegroundColor Yellow
-                Write-Host "  [L6] Fix: Open Disk Management, right-click D:, ensure full NTFS permissions for your user." -ForegroundColor Yellow
+                Write-Host "  [L6] E: exists but is not writable (PermissionDenied). Skipping cross-volume." -ForegroundColor Yellow
+                Write-Host "  [L6] Fix: Open Disk Management, right-click E:, ensure full NTFS permissions for your user." -ForegroundColor Yellow
             }
         }
         if (-not $crossVolumeDone) {

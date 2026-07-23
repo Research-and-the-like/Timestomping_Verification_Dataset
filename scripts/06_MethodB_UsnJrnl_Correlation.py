@@ -12,15 +12,28 @@ print("============== 06_MethodB_UsnJrnl_Correlation.py ==============\n")
 
 DATA_ROOT = Path(r"C:\Research\Data")
 
-def load_usnjrnl(artifacts_dir, tag_pattern="post-timestomping"):
-    """Load parsed UsnJrnl data."""
-    for d in sorted(artifacts_dir.iterdir(), reverse=True):
-        if tag_pattern in d.name:
-            usn_csv = d / "UsnJrnl_raw.csv"
-            if usn_csv.exists():
-                print(f"[+] Loading UsnJrnl from {usn_csv}")
-                return pd.read_csv(usn_csv, low_memory=False)
-    return None
+def load_usnjrnl(artifacts_dir):
+    matches = sorted(artifacts_dir.rglob("UsnJrnl_*_raw.csv"), key=lambda p: p.stat().st_mtime, reverse=True)
+
+    if not matches:
+        raise FileNotFoundError(f"No UsnJrnl_*_raw.csv found anywhere under {artifacts_dir}")
+
+    # Take every file from the same capture batch (same parent folder) as the newest
+    # match, so both the C: and E: journals from one capture run get combined.
+    latest_dir = matches[0].parent
+    batch = [p for p in matches if p.parent == latest_dir]
+
+    dfs = []
+    for usn_csv in batch:
+        print(f"[+] Loading UsnJrnl from {usn_csv}")
+        with open(usn_csv, "r", encoding="utf-16") as f:
+            lines = f.readlines()
+        header_idx = next(i for i, line in enumerate(lines) if line.startswith("Usn,File name"))
+        dfs.append(pd.read_csv(usn_csv, low_memory=False, encoding="utf-16", skiprows=header_idx))
+
+    combined = pd.concat(dfs, ignore_index=True)
+    print(f"[+] Combined {len(batch)} journal file(s), {len(combined)} total rows")
+    return combined
 
 def _find_column(df, candidates):
     """Return the first column in `df` matching any candidate (case/space insensitive)."""
@@ -74,9 +87,14 @@ def compute_methodB_features(analysis_df, usn_df):
         print("[!] UsnJrnl CSV has no recognizable Reason column; B1/B2 will be False.")
 
     # Pre-normalize the reason column once for the whole journal.
-    if reason_col is not None:
+    if reason_col is not None or ts_col is not None:
         usn_df = usn_df.copy()
+    if reason_col is not None:
         usn_df['_reason_norm'] = _normalize_reasons(usn_df[reason_col])
+    if ts_col is not None:
+        usn_df['_ts_parsed'] = pd.to_datetime(
+            usn_df[ts_col], format='%d/%m/%Y %H:%M:%S', errors='coerce'
+        )
     usn_by_file = usn_df.groupby(fname_col)
 
     b1_results = []
@@ -116,7 +134,7 @@ def compute_methodB_features(analysis_df, usn_df):
         # B3: SI Created claims file is older than earliest UsnJrnl entry
         si_created = pd.to_datetime(row.get('si_created'), errors='coerce')
         if ts_col is not None and pd.notna(si_created):
-            earliest_usn = pd.to_datetime(file_usn[ts_col], errors='coerce').min()
+            earliest_usn = file_usn['_ts_parsed'].min()
             if pd.notna(earliest_usn):
                 b3_results.append(bool(si_created < earliest_usn - timedelta(days=1)))
             else:
