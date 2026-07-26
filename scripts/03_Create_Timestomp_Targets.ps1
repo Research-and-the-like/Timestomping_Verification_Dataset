@@ -6,8 +6,9 @@
 
 Write-Host "============== 03_Create_Timestomp_Targets.ps1 ==============" -ForegroundColor Black -BackgroundColor Yellow
 
-$TSDir = "C:\Research\Data\Timestomped"
-$TargetDir = "$TSDir\Targets"
+$TSDir = "C:\Research\Data\Timestomped"          # manifest stays on C: (SetMace must lock the TARGET volume, not this one)
+$TargetVolume = "E:"                               # secondary VDI; change to your actual drive letter
+$TargetDir = "$TargetVolume\Timestomped\Targets"
 New-Item -ItemType Directory -Path $TargetDir -Force | Out-Null
 
 $tools = @("T1_Timestomp", "T2_BulkFileChanger", "T3_SetMace", "T4_PowerShell", "T5_nTimestomp")
@@ -42,9 +43,9 @@ Padding: $([guid]::NewGuid().ToString() * 3)
                 FilePath  = $fpath
                 Tool      = $tool
                 Scenario  = $scenario
-                PreCreated   = (Get-Item $fpath).CreationTime.ToString('o')
-                PreModified  = (Get-Item $fpath).LastWriteTime.ToString('o')
-                PreAccessed  = (Get-Item $fpath).LastAccessTime.ToString('o')
+                PreCreated   = (Get-Item $fpath).CreationTimeUtc.ToString('o')
+                PreModified  = (Get-Item $fpath).LastWriteTimeUtc.ToString('o')
+                PreAccessed  = (Get-Item $fpath).LastAccessTimeUtc.ToString('o')
                 PostCreated  = ""
                 PostModified = ""
                 PostAccessed = ""

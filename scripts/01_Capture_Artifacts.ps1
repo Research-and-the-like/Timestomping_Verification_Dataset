@@ -8,9 +8,11 @@
 param(
     [Parameter(Mandatory=$true)]
     [string]$Tag,
-    [string]$Drive = "C:",
+    [string[]]$Drives = @("C:", "E:"),      # capture both: baselines on C:, timestomp targets on E:
+    [string[]]$UsnDrives = @("C:", "E:"),   # journal correlation needs both, positives live on E:
     [string]$OutDir = "C:\Research\Data\Artifacts"
 )
+
 
 Write-Host "============== 01_Capture_Artifacts.ps1 ==============" -ForegroundColor Black -BackgroundColor Yellow
 
@@ -24,30 +26,34 @@ $kape = "$ToolsRoot\kape\KAPE\kape.exe"
 
 Write-Host "=== Artifact Capture: $Tag ($timestamp) ===" -ForegroundColor Cyan
 
-# --- 1. Extract $MFT ---
-Write-Host "[1/6] Extracting `$MFT..." -ForegroundColor Yellow
+# --- 1. Extract $MFT for each target volume ---
 $rawcopy = "$ToolsRoot\RawCopy\RawCopy.exe"
-if (Test-Path $rawcopy) {
-    & $rawcopy /FileNamePath:"${Drive}\`$MFT" /OutputPath:"$captureDir"
-    Rename-Item "$captureDir\`$MFT" -NewName "MFT_raw" -ErrorAction SilentlyContinue
-} else {
-    Write-Host "Error extracting `$MFT using RawCopy" -ForegroundColor Red
-#    Write-Host "Using KAPE for MFT extraction" -ForegroundColor Yellow
-    # KAPE fallback
-#    $kape = "$ToolsRoot\kape\KAPE\kape.exe"
-#    if (Test-Path $kape) {
-#        & $kape --tsource $Drive --tdest "$captureDir\KAPE_MFT" --target `$MFT
-#    }
+$mftRawFiles = @{}   # driveLetter -> raw MFT path
+foreach ($drv in $Drives) {
+    $letter = $drv.TrimEnd(':').TrimEnd('\')   # "C:" -> "C"
+    Write-Host "[1/6] Extracting `$MFT from ${drv}..." -ForegroundColor Yellow
+    if (Test-Path $rawcopy) {
+        & $rawcopy /FileNamePath:"${drv}\`$MFT" /OutputPath:"$captureDir"
+        $rawName = "MFT_${letter}_raw"
+        Rename-Item "$captureDir\`$MFT" -NewName $rawName -ErrorAction SilentlyContinue
+        if (Test-Path "$captureDir\$rawName") {
+            $mftRawFiles[$letter] = "$captureDir\$rawName"
+        } else {
+            Write-Host "  [!] Raw MFT for ${drv} not found after RawCopy" -ForegroundColor Red
+        }
+    } else {
+        Write-Host "Error extracting `$MFT using RawCopy (not found at $rawcopy)" -ForegroundColor Red
+    }
 }
 
-# --- 2. Extract $UsnJrnl ---
-Write-Host "[2/6] Extracting `$UsnJrnl..." -ForegroundColor Yellow
-# Extract via fsutil
-fsutil usn readjournal $Drive csv > "$captureDir\UsnJrnl_raw.csv"
-# Also extract the raw $J file
-if (Test-Path $rawcopy) {
-#    & $rawcopy /FileNamePath:"${Drive}\`$Extend\`$UsnJrnl:`$J" /OutputPath:"$captureDir"
-     & $kape --tsource $Drive --tdest "$captureDir\UsnJrnl" --target `$J
+# --- 2. Extract $UsnJrnl (per volume: positives live on E:, must capture both) ---
+foreach ($drv in $UsnDrives) {
+    $letter = $drv.TrimEnd(':').TrimEnd('\')
+    Write-Host "[2/6] Extracting `$UsnJrnl from ${drv}..." -ForegroundColor Yellow
+    fsutil usn readjournal $drv csv > "$captureDir\UsnJrnl_${letter}_raw.csv"
+    if (Test-Path $rawcopy) {
+        & $kape --tsource $drv --tdest "$captureDir\UsnJrnl_${letter}" --target `$J
+    }
 }
 
 # --- 3. Collect Prefetch ---
@@ -64,11 +70,16 @@ wevtutil epl Security "$evtDest\Security.evtx"
 wevtutil epl System "$evtDest\System.evtx"
 wevtutil epl "Microsoft-Windows-Sysmon/Operational" "$evtDest\Sysmon.evtx"
 
-# --- 5. Parse MFT ---
-Write-Host "[5/6] Parsing MFT with MFTECmd..." -ForegroundColor Yellow
+# --- 5. Parse each MFT with MFTECmd (one CSV per volume) ---
+Write-Host "[5/6] Parsing MFT(s) with MFTECmd..." -ForegroundColor Yellow
 $mftecmd = Get-ChildItem "$ToolsRoot\EZTools" -Recurse -Filter "MFTECmd.exe" | Select-Object -First 1
 if ($mftecmd) {
-    & $mftecmd.FullName -f "$captureDir\MFT_raw" --csv "$captureDir" --csvf "MFT_parsed.csv"
+    foreach ($letter in $mftRawFiles.Keys) {
+        & $mftecmd.FullName -f $mftRawFiles[$letter] --csv "$captureDir" --csvf "MFT_${letter}_parsed.csv"
+        Write-Host "  [+] Parsed ${letter}: -> MFT_${letter}_parsed.csv" -ForegroundColor Gray
+    }
+} else {
+    Write-Host "  [!] MFTECmd not found" -ForegroundColor Red
 }
 
 # --- 6. Parse Prefetch ---
